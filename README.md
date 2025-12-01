@@ -19,17 +19,6 @@ Your **CogniVera** framework has been completely refactored and is **ready for G
 6. **socketR.py** - TCP hardware communication
 7. **voice.py** - Speech recognition & synthesis
 
-### Documentation (5 files)
-1. **README.md** - Project overview and quick start
-2. **ARCHITECTURE.md** - Technical reference and module details
-3. **CLEANUP_SUMMARY.md** - What was improved
-4. **requirements.txt** - Python dependencies
-5. **.env.example** - Environment template
-
-### Configuration (2 files)
-1. **.gitignore** - Git exclusions
-2. **LICENSE** - MIT License (recommended)
-
 ---
 
 ## 🚀 Quick Start
