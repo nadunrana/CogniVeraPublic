@@ -1,39 +1,5 @@
 # File Structure & Architecture
 
-## Directory Layout
-
-```
-cognivera/
-├── src/
-│   ├── __init__.py
-│   ├── assistant.py          # LLM Agent (GPT-4 interface)
-│   ├── controller.py         # Dual-agent orchestration
-│   ├── functionCaller.py     # Robot action execution
-│   ├── logger.py             # Experiment logging
-│   ├── main.py               # Main entry point
-│   ├── socketR.py            # Hardware communication
-│   └── voice.py              # Voice I/O handler
-│
-├── logs/
-│   └── experiment_log.csv    # Auto-generated experiment logs
-│
-├── config/
-│   └── config.yaml           # Configuration (optional)
-│
-├── tests/
-│   ├── test_assistant.py
-│   ├── test_controller.py
-│   └── test_voice.py
-│
-├── .gitignore                # Git exclusions
-├── .env.example              # Environment template
-├── requirements.txt          # Python dependencies
-├── README.md                 # Documentation
-├── ARCHITECTURE.md           # This file
-└── LICENSE                   # MIT License
-
-```
-
 ## Module Overview
 
 ### assistant.py
