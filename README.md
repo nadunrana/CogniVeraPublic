@@ -77,7 +77,9 @@ Basic TCP client for hardware robot communication.
 ## Publication Reference
 
 If using CogniVera in your work, please cite:
-> Banerjee, P., "Large Language Models in Human-Robot Collaboration with Cognitive Validation Against Context-induced Hallucinations", IEEE Access, 2025. DOI:10.1109/ACCESS.2025.3565918
+> N. Ranasinghe, W. M. Mohammed, K. Stefanidis, and J. L. Martinez Lastra, ‘Large Language Models in Human-Robot Collaboration With Cognitive Validation Against Context-Induced Hallucinations’, IEEE Access, vol. 13, pp. 77418–77430, 2025,
+> doi: 10.1109/ACCESS.2025.3565918.
+
 
 ---
 
