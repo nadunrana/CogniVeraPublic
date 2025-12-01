@@ -1,0 +1,36 @@
+# CogniVera Requirements
+# Python dependencies for human-robot collaboration framework
+# 
+# Install with: pip install -r requirements.txt
+
+# Core Dependencies
+openai>=1.3.0                          # OpenAI API client
+python-dotenv>=1.0.0                  # Environment variable management
+requests>=2.31.0                      # HTTP library for API calls
+
+# Speech & Audio Processing
+SpeechRecognition>=3.10.0              # Speech recognition library
+openai-whisper>=20231117              # OpenAI's Whisper ASR model (optional, for offline)
+soundfile>=0.12.1                      # Audio file I/O
+sounddevice>=0.4.6                     # Audio device I/O
+numpy>=1.24.0                          # Numerical computing
+
+# Computer Vision (optional, for robot vision tasks)
+opencv-python-headless>=4.8.0          # Computer vision library (headless for servers)
+
+# Data & Logging
+pandas>=2.0.0                          # Data manipulation (optional, for log analysis)
+
+# Type Checking & Development (optional)
+mypy>=1.5.0                            # Static type checker
+pytest>=7.4.0                          # Testing framework
+pytest-cov>=4.1.0                      # Code coverage for pytest
+
+# Linting & Code Quality (optional)
+pylint>=2.17.0                         # Code analysis
+flake8>=6.0.0                          # Style guide enforcement
+black>=23.9.0                          # Code formatter
+
+# Documentation (optional)
+sphinx>=7.0.0                          # Documentation generator
+sphinx-rtd-theme>=1.3.0                # ReadTheDocs theme
