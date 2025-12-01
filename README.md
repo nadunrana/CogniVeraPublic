@@ -447,7 +447,6 @@ mypy .
 For issues, questions, or suggestions:
 - Open an [Issue](https://github.com/nadunrana/CogniVera/issues)
 - Check [Troubleshooting](./README.md#-troubleshooting) section
-- Review [GIT_FIXES.md](GIT_FIXES.md) for common errors
 
 ---
 
@@ -455,7 +454,7 @@ For issues, questions, or suggestions:
 
 - **OpenAI** - GPT-4 and Whisper API
 - **IEEE Access** - Publication venue
-- **FAST-LAB** & **Thammasat University** - Research institution
+- **FAST-LAB** & **Tampere University** - Research institution
 
 ---
 
