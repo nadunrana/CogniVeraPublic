@@ -1,26 +1,3 @@
-# CogniVera Publication Ready - Complete Guide
-
-## 🎯 Overview
-
-Your **CogniVera** framework has been completely refactored and is **ready for GitHub publication**. All code follows professional Python standards and best practices.
-
-**Reference Paper**: [Large Language Models in Human-Robot Collaboration with Cognitive Validation Against Context-induced Hallucinations](https://doi.org/10.1109/ACCESS.2025.3565918) - IEEE Access, 2025
-
----
-
-## 📦 What You Have
-
-### Core Modules (7 files)
-1. **assistant.py** - OpenAI LLM integration
-2. **controller.py** - Dual-agent orchestration (Main + Validation)
-3. **functionCaller.py** - Robot action execution
-4. **logger.py** - CSV experiment logging
-5. **main.py** - Main entry point and session management
-6. **socketR.py** - TCP hardware communication
-7. **voice.py** - Speech recognition & synthesis
-
----
-
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
