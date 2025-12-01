@@ -14,6 +14,7 @@ openai-whisper>=20231117              # OpenAI's Whisper ASR model (optional, fo
 soundfile>=0.12.1                      # Audio file I/O
 sounddevice>=0.4.6                     # Audio device I/O
 numpy>=1.24.0                          # Numerical computing
+PyAudio>=0.2.14                        # Microphone I/O via PortAudio
 
 # Computer Vision (optional, for robot vision tasks)
 opencv-python-headless>=4.8.0          # Computer vision library (headless for servers)
