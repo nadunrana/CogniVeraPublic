@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+code.txt
+
+# Logs and data
+logs/
+*.log
+*.csv
+output/
+results/
+
+# Audio files
+*.wav
+*.opus
+*.mp3
+audio_input.wav
+audio_output.opus
+Output.opus
+
+# Media
+*.jpg
+*.jpeg
+*.png
+frame.jpg
+
+# Temporary
+*.tmp
+.cache/
+*.pickle
+
+# OS
+.DS_Store
+Thumbs.db
