@@ -236,7 +236,7 @@ The robot has two arms (Left and Right) with grippers for object manipulation.
 
     def _build_function_definitions(self) -> str:
         """Build function definitions for agents."""
-        functions = f"""{
+        functions = {
             "Functions": [
                 {
                     "Name": "Move",
@@ -253,36 +253,36 @@ The robot has two arms (Left and Right) with grippers for object manipulation.
                     "Params": {
                         "Type": "Coordinate or Name",
                         "Arm": "Left or Right",
-                        "X/Y/Z": "Coordinates or Name": "Preset position"
+                        "X/Y/Z": "Coordinates or Define position name"
+                    }
+                },
+                {
+                    "Name": "Grip",
+                    "Description": "Open (0) or close (1) gripper",
+                    "Params": {
+                        "Arm": "Left or Right",
+                        "State": "0 or 1"
+                    }
+                },
+                {
+                    "Name": "Rotate",
+                    "Description": "Rotate end-effector",
+                    "Params": {
+                        "Arm": "Left or Right",
+                        "Position": "Forward, Down, or Side"
+                    }
+                },
+                {
+                    "Name": "Assembly",
+                    "Description": "Execute assembly step (1-14)",
+                    "Params": {"Step": "Integer 1-14"}
+                },
+                {
+                    "Name": "Identify",
+                    "Description": "Vision-based object identification",
+                    "Params": {"Query": "Question about objects in view"}
+                }
+            ]
         }
-        },
-        {
-            "Name": "Grip",
-            "Description": "Open (0) or close (1) gripper",
-            "Params": {
-                "Arm": "Left or Right",
-                "State": "0 or 1"
-            }
-        },
-        {
-            "Name": "Rotate",
-            "Description": "Rotate end-effector",
-            "Params": {
-                "Arm": "Left or Right",
-                "Position": "Forward, Down, or Side"
-            }
-        },
-        {
-            "Name": "Assembly",
-            "Description": "Execute assembly step (1-14)",
-            "Params": {"Step": "Integer 1-14"}
-        },
-        {
-            "Name": "Identify",
-            "Description": "Vision-based object identification",
-            "Params": {"Query": "Question about objects in view"}
-        }
-        ]
-        }"""
 
         return json.dumps(functions, indent=2)
