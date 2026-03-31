@@ -18,6 +18,10 @@ from functionCaller import RobotFunctionCaller
 from logger import ExperimentLogger
 from voice import VoiceHandler
 
+#Loading up the .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
