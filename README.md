@@ -470,4 +470,3 @@ For issues, questions, or suggestions:
 **Built with ❤️ for human-robot collaboration** 🤖👥
 
 Last Updated: December 2025  
-Repository: [github.com/nadunrana/CogniVera](https://github.com/nadunrana/CogniVera)
