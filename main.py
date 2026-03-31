@@ -142,8 +142,18 @@ class CogniVeraSession:
                 self._output_response(response_json["OP"].get("Reply", ""))
 
                 # Execute function if requested
-                if response_json["OP"]["Function"].get("Name") not in ["0", 0]:
+                func = response_json.get("OP", {}).get("Function")
+
+                # If it's a list, take the first dict if it exists
+                if isinstance(func, list):
+                    func = func[0] if func else {}
+
+                # Now it's safe
+                func_name = func.get("Name") if isinstance(func, dict) else None
+
+                if func_name not in ["0", 0]:
                     self._execute_function(response_json)
+
 
                 # Update state
                 self.state = response_json.get("State", self.state)
