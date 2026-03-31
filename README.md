@@ -267,11 +267,8 @@ cp .env.example .env
 # Edit .env with your API key
 ```
 
-**❌ Never**: Hardcode secrets in source code
-
 ### Secrets Excluded from Git
 - `.env` (local configuration)
-- `code.txt` (old key file)
 - `logs/` (experiment data)
 
 ---
