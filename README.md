@@ -50,6 +50,7 @@ Features include:
    # or
    venv\Scripts\activate             # Windows
    ```
+   Make sure to OPENAI_API_KEY = <Your Key> in the .env file
 
 3. **Install dependencies**
    ```bash
