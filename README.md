@@ -267,11 +267,8 @@ cp .env.example .env
 # Edit .env with your API key
 ```
 
-**❌ Never**: Hardcode secrets in source code
-
 ### Secrets Excluded from Git
 - `.env` (local configuration)
-- `code.txt` (old key file)
 - `logs/` (experiment data)
 
 ---
@@ -473,4 +470,3 @@ For issues, questions, or suggestions:
 **Built with ❤️ for human-robot collaboration** 🤖👥
 
 Last Updated: December 2025  
-Repository: [github.com/nadunrana/CogniVera](https://github.com/nadunrana/CogniVera)
