@@ -1,10 +1,7 @@
 """
 CogniVera Main Module (ENV-enabled)
 ===================================
-
-
 Main entry point for conversational human-robot collaboration system.
-Now fully uses .env configuration for flexible deployment.
 """
 
 import logging

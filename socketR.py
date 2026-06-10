@@ -5,7 +5,6 @@ CogniVera Socket Communication Module
 This module provides TCP socket-based communication with robot hardware.
 Handles low-level message transmission and reception over network socket.
 
-Reference: https://doi.org/10.1109/ACCESS.2025.3565918
 """
 
 import socket

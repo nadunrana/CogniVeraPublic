@@ -5,7 +5,6 @@ CogniVera Controller Module
 Orchestrates dual-agent system: Main Agent (task execution) and Validation Agent (quality assurance).
 Handles request processing, LLM interactions, and feedback loops.
 
-Reference: https://doi.org/10.1109/ACCESS.2025.3565918
 """
 
 import json
