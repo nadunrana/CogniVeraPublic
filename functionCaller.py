@@ -1,45 +1,24 @@
 """
-CogniVera Function Caller Module
-================================
-
-This module implements robot action execution through function calls.
-Translates high-level function requests into low-level protocol commands.
-
-Supports: Movement, Gripper control, Rotation, Assembly tasks, Vision-based identification
-
-Reference: https://doi.org/10.1109/ACCESS.2025.3565918
+Refactored CogniVera Function Caller
+- Fully aligned with legacy protocol messaging
+- Compatible with updated TCPClient (send_message)
 """
 
 import json
 import logging
 import base64
-from typing import Optional, Dict, Any, List
-
-import cv2
-import numpy as np
+from typing import Dict, Any, Optional
 import requests
 
 from socketR import TCPClient
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
 
 class RobotFunctionCaller:
-    """
-    Executes robot functions and manages hardware communication.
 
-    Handles function parsing from JSON commands and translates them into
-    robot protocol messages. Supports movement, gripper control, rotation,
-    assembly sequences, and vision-based tasks.
+    FUNCTION_CALL = "80"
 
-    Attributes:
-        robot_on (bool): Whether hardware is available
-        coordinates (dict): Predefined coordinate positions
-        rotations (dict): Predefined rotation configurations
-    """
-
-    # Protocol command codes
     PROTOCOL_COMMANDS = {
         "CHANGEX": "10",
         "CHANGEY": "11",
@@ -47,17 +26,13 @@ class RobotFunctionCaller:
         "MOVE": "13",
         "GRIPPER_OPEN": "20",
         "GRIPPER_CLOSE": "21",
-        "GET_POSITION": "99",
-        "SAVE_POSITION": "91",
         "ROTATE": "40",
         "ASSEMBLY": "69"
     }
 
-    # Arm identifiers
     LEFT = "0"
     RIGHT = "1"
 
-    # Coordinate frames
     DEFAULT_COORDS = {
         "R": {
             "Home": [460, -350, 75],
@@ -65,11 +40,10 @@ class RobotFunctionCaller:
         },
         "L": {
             "Home": [460, 350, 75],
-            "HomeL": [480, 327, 140]
+            "HomeR": [480, -327, 140]
         }
     }
 
-    # Rotation presets
     DEFAULT_ROTATIONS = {
         "Down": [0, 180, 90],
         "Front": [-90, 0, -90],
@@ -77,248 +51,199 @@ class RobotFunctionCaller:
         "SideL": [-90, 0, 180]
     }
 
-    def __init__(
-            self,
-            robot_on: bool = True,
-            host: str = "192.168.125.1",
-            port: int = 5000,
-            api_key: Optional[str] = None
-    ):
-        """
-        Initialize function caller.
-
-        Args:
-            robot_on (bool): Enable hardware communication. Default: True
-            host (str): Robot controller IP. Default: 192.168.125.1
-            port (int): Robot controller port. Default: 5000
-            api_key (str, optional): OpenAI API key for vision tasks
-        """
+    def __init__(self, robot_on=True, host="192.168.125.1", port=5000, api_key=None):
         self.robot_on = robot_on
-        self.host = host
-        self.port = port
         self.api_key = api_key
+        self.msg = ""
+        self.last_update = "Initialized"
 
-        # Initialize socket connection if robot is enabled
-        self.socket_client: Optional[TCPClient] = None
+        self.left_position = [0, 0, 0]
+        self.right_position = [0, 0, 0]
+
+        self.socket_client = None
         if self.robot_on:
             try:
                 self.socket_client = TCPClient(host, port)
-                logger.info("Robot hardware connected")
+                logger.info("Robot connected")
             except Exception as e:
-                logger.warning(f"Robot hardware unavailable: {str(e)}")
+                logger.warning(f"Robot unavailable: {e}")
                 self.robot_on = False
 
-        # State tracking
-        self.left_position = [0, 0, 0]
-        self.right_position = [0, 0, 0]
-        self.last_update = "Initialized"
-
+    # -----------------------------
+    # PUBLIC EXECUTION ENTRY
+    # -----------------------------
     def execute_function(self, function_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute a robot function based on JSON specification.
 
-        Args:
-            function_data (dict): Function definition with Name and Params
-
-        Returns:
-            dict: Update message with status
-        """
-        function_name = function_data.get("Name")
+        name = function_data.get("Name")
         params = function_data.get("Params", {})
 
         try:
-            if function_name == "Move":
-                self._execute_move(params)
-            elif function_name == "MoveTo":
-                self._execute_move_to(params)
-            elif function_name == "Grip":
-                self._execute_grip(params)
-            elif function_name == "Rotate":
-                self._execute_rotate(params)
-            elif function_name == "Assembly":
-                self._execute_assembly(params)
-            elif function_name == "Identify":
-                return self._execute_identify(params)
+            if name == "Move":
+                self._move(params)
+            elif name == "MoveTo":
+                self._move_to(params)
+            elif name == "Grip":
+                self._grip(params)
+            elif name == "Rotate":
+                self._rotate(params)
+            elif name == "Assembly":
+                self._assembly(params)
+            elif name == "Identify":
+                return self._identify(params)
             else:
-                logger.warning(f"Unknown function: {function_name}")
-                self.last_update = f"Unknown function: {function_name}"
+                return {"status": "error", "message": f"Unknown function {name}"}
 
-            # Send message to robot if hardware is available
+# ✅ Use correct method from socketR
             if self.robot_on and self.socket_client:
-                try:
-                    response = self.socket_client.send_message(self._build_message())
-                    self._parse_response(response)
-                except Exception as e:
-                    logger.error(f"Hardware communication error: {str(e)}")
+                reply = self.socket_client.send_message(self.msg)
+                self._parse_response(reply)
 
-            return {"status": "success", "update": self.last_update}
-
+            return { "status": "success",
+                     "update": self.last_update,
+                     "message": self.msg# helpful for debugging
+            }
         except Exception as e:
-            logger.error(f"Function execution error: {str(e)}")
             return {"status": "error", "message": str(e)}
 
-    def _execute_move(self, params: Dict[str, Any]) -> None:
-        """Execute incremental movement command."""
-        axis = params.get("Axis", "X")
-        units = int(params.get("Units", 0))
-        arm = params.get("Arm", "Left")
+    # -----------------------------
+    # CORE BUILDING
+    # -----------------------------
+    def _format_xyz(self, x, y, z):
+        return (
+            ("0" if x >= 0 else "1") + f"{abs(int(x)):03d}" +
+            ("0" if y >= 0 else "1") + f"{abs(int(y)):03d}" +
+            ("0" if z >= 0 else "1") + f"{abs(int(z)):03d}"
+        )
+
+    def _build_msg(self, arm, command, x=0, y=0, z=0):
+        return (
+            (self.LEFT if arm == "Left" else self.RIGHT) +
+            self.FUNCTION_CALL +
+            command +
+            self._format_xyz(x, y, z)
+        )
+
+    # -----------------------------
+    # FUNCTION IMPLEMENTATIONS
+    # -----------------------------
+    def _move(self, p):
+        axis = p.get("Axis")
+        units = int(p.get("Units", 0))
+        arm = p.get("Arm", "Left")
+
+        x = y = z = 0
 
         if axis == "X":
-            command = self.PROTOCOL_COMMANDS["CHANGEX"]
-            self.last_update = f"Moved {arm} arm by {units} units along X axis"
+            x = units
+            cmd = self.PROTOCOL_COMMANDS["CHANGEX"]
         elif axis == "Y":
-            command = self.PROTOCOL_COMMANDS["CHANGEY"]
-            self.last_update = f"Moved {arm} arm by {units} units along Y axis"
-        elif axis == "Z":
-            command = self.PROTOCOL_COMMANDS["CHANGEZ"]
-            self.last_update = f"Moved {arm} arm by {units} units along Z axis"
-
-        logger.info(self.last_update)
-
-    def _execute_move_to(self, params: Dict[str, Any]) -> None:
-        """Execute absolute movement to named position or coordinates."""
-        move_type = params.get("Type", "Coordinate")
-        arm = params.get("Arm", "Left")
-
-        if move_type == "Coordinate":
-            x = int(params.get("X", 0))
-            y = int(params.get("Y", 0))
-            z = int(params.get("Z", 0))
-            self.last_update = f"Moved {arm} to coordinates ({x}, {y}, {z})"
-        elif move_type == "Name":
-            name = params.get("Name", "Home")
-            coords = self.DEFAULT_COORDS["R" if arm == "Right" else "L"].get(name)
-            if coords:
-                self.last_update = f"Moved {arm} to preset '{name}'"
-            else:
-                self.last_update = f"Unknown preset position: {name}"
-
-        logger.info(self.last_update)
-
-    def _execute_grip(self, params: Dict[str, Any]) -> None:
-        """Execute gripper open/close."""
-        arm = params.get("Arm", "Left")
-        state = str(params.get("State", "0"))
-
-        if state == "1":
-            self.last_update = f"{arm} gripper closed"
-        elif state == "0":
-            self.last_update = f"{arm} gripper opened"
-
-        logger.info(self.last_update)
-
-    def _execute_rotate(self, params: Dict[str, Any]) -> None:
-        """Execute end-effector rotation."""
-        arm = params.get("Arm", "Left")
-        position = params.get("Position", "Front")
-
-        if position in self.DEFAULT_ROTATIONS:
-            rotation = self.DEFAULT_ROTATIONS[position]
-            self.last_update = f"{arm} rotated to {position}: {rotation}"
+            y = units
+            cmd = self.PROTOCOL_COMMANDS["CHANGEY"]
         else:
-            self.last_update = f"Unknown rotation: {position}"
+            z = units
+            cmd = self.PROTOCOL_COMMANDS["CHANGEZ"]
 
-        logger.info(self.last_update)
+        self.msg = self._build_msg(arm, cmd, x, y, z)
+        self.last_update = f"Moved {arm} by {units} along {axis}"
 
-    def _execute_assembly(self, params: Dict[str, Any]) -> None:
-        """Execute assembly step."""
-        step = int(params.get("Step", 0))
-        self.last_update = f"Assembly step {step} completed"
-        logger.info(self.last_update)
+    def _move_to(self, p):
+        arm = p.get("Arm", "Left")
 
-    def _execute_identify(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute vision-based identification."""
-        query = params.get("Query", "What do you see?")
+        if p.get("Type") == "Name":
+            coords = self.DEFAULT_COORDS["R" if arm == "Right" else "L"][p.get("Name")]
+        else:
+            coords = [p.get("X", 0), p.get("Y", 0), p.get("Z", 0)]
 
-        try:
-            # Capture image (stub implementation)
-            # In production, would use cv2.VideoCapture
-            logger.info(f"Vision query: {query}")
+        x, y, z = coords
 
-            # Call GPT-4 Vision for analysis
-            response = self._query_vision(query)
-            return {"status": "success", "result": response}
+        self.msg = self._build_msg(arm, self.PROTOCOL_COMMANDS["MOVE"], x, y, z)
+        self.last_update = f"Moved {arm} to ({x},{y},{z})"
 
-        except Exception as e:
-            logger.error(f"Vision identification error: {str(e)}")
-            return {"status": "error", "message": str(e)}
+    def _grip(self, p):
+        arm = p.get("Arm", "Left")
+        state = str(p.get("State", "0"))
 
-    def _query_vision(self, query: str, image_path: str = "frame.jpg") -> str:
-        """Query GPT-4 Vision for image analysis."""
+        cmd = self.PROTOCOL_COMMANDS["GRIPPER_CLOSE"] if state == "1" else self.PROTOCOL_COMMANDS["GRIPPER_OPEN"]
+
+        self.msg = self._build_msg(arm, cmd, 0, 0, 0)
+        self.last_update = f"{arm} gripper {'closed' if state == '1' else 'opened'}"
+
+    def _rotate(self, p):
+        arm = p.get("Arm", "Left")
+        pos = p.get("Position", "Front")
+
+        if pos == "Side":
+            rot = self.DEFAULT_ROTATIONS["SideR" if arm == "Right" else "SideL"]
+        else:
+            rot = self.DEFAULT_ROTATIONS.get(pos, self.DEFAULT_ROTATIONS["Front"])
+
+        x, y, z = rot
+
+        self.msg = self._build_msg(arm, self.PROTOCOL_COMMANDS["ROTATE"], x, y, z)
+        self.last_update = f"{arm} rotated to {pos}"
+
+    def _assembly(self, p):
+        step = int(p.get("Step", 0))
+
+        left_steps = {2, 3, 5, 7, 9, 11, 14}
+        arm = "Left" if step in left_steps else "Right"
+
+        self.msg = self._build_msg(arm, self.PROTOCOL_COMMANDS["ASSEMBLY"], step, 0, 0)
+        self.last_update = f"Assembly step {step} complete"
+
+    # -----------------------------
+    # VISION
+    # -----------------------------
+    def _identify(self, p):
         if not self.api_key:
-            logger.warning("Vision query requested but no API key provided")
-            return "Vision unavailable"
+            return {"status": "error", "message": "No API key"}
 
+        query = p.get("Query")
+
+        with open("frame.jpg", "rb") as f:
+            img = base64.b64encode(f.read()).decode()
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "model": "gpt-4-turbo",
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": query},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{img}"}
+                    }
+                ]
+            }]
+        }
+
+        res = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        out = res.json()
+
+        return {"status": "success", "result": out["choices"][0]["message"]["content"]}
+
+    # -----------------------------
+    # RESPONSE PARSING
+    # -----------------------------
+    def _parse_response(self, reply):
         try:
-            # Encode image to base64
-            with open(image_path, "rb") as f:
-                image_data = base64.b64encode(f.read()).decode('utf-8')
+            values = reply.split('|')
+            arm = values[0][0]
+            pos = list(map(float, values[-3:]))
 
-            # Call GPT-4 Vision API
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"
-            }
+            if arm == self.LEFT:
+                self.left_position = pos
+            else:
+                self.right_position = pos
 
-            payload = {
-                "model": "gpt-4-turbo",
-                "messages": [{
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": query},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_data}"
-                            }
-                        }
-                    ]
-                }],
-                "max_tokens": 300
-            }
+        except Exception:
+            logger.warning("Failed to parse robot response")
 
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-
-            result = response.json()
-            answer = result['choices'][0]['message']['content']
-            logger.info(f"Vision result: {answer}")
-            return answer
-
-        except Exception as e:
-            logger.error(f"Vision API error: {str(e)}")
-            return f"Error: {str(e)}"
-
-    def _build_message(self) -> str:
-        """Build protocol message (stub - implement per your robot protocol)."""
-        return ""
-
-    def _parse_response(self, response: str) -> None:
-        """Parse robot response and update position tracking."""
-        try:
-            values = response.split('|')
-            if len(values) >= 3:
-                arm = values[0][0]
-                positions = [float(v) for v in values[-3:]]
-
-                if arm == self.LEFT:
-                    self.left_position = positions
-                elif arm == self.RIGHT:
-                    self.right_position = positions
-
-                logger.debug(f"Position updated: {positions}")
-        except Exception as e:
-            logger.warning(f"Could not parse response: {str(e)}")
-
-    def close(self) -> None:
-        """Close hardware connection."""
+    def close(self):
         if self.socket_client:
             self.socket_client.close()
-            logger.info("Hardware connection closed")
-
-
-# Legacy alias for backward compatibility
-functioncall = RobotFunctionCaller

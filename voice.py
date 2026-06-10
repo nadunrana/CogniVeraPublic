@@ -69,7 +69,7 @@ class VoiceHandler:
 
         # Audio files
         self.audio_input_file = "audio_input.wav"
-        self.audio_output_file = "audio_output.opus"
+        self.audio_output_file = "audio_output.wav"
 
         logger.info("VoiceHandler initialized successfully")
 
@@ -170,7 +170,7 @@ class VoiceHandler:
         else:
             message = (
                 f"Hello! {greeting} "
-                "I am PRODIGI, the conversational cobot from FAST-LAB at Thammasat University. "
+                "I am PRODIGI, the conversational cobot from FAST-LAB at Tham-pe-ray University. "
                 "How can I help you today?"
             )
 

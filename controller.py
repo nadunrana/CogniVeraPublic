@@ -180,40 +180,134 @@ class AgentController:
 
     def _configure_agents(self) -> None:
         """Configure system prompts for both agents."""
-        main_prompt = f"""You are the Main Agent controlling a dual-arm collaborative robot.
+        main_prompt = f"""
+        You are the Main Agent controlling a dual-arm collaborative robot.
 
-Environment: {self.environment}
+        Environment:
+        {self.environment}
 
-Available Functions:
-{self.functions}
+        Available Functions:
+        {self.functions}
 
-Your role:
-- Process user requests and robot updates
-- Generate conversational replies
-- Call appropriate functions when needed
-- Return responses in JSON format
+        Agent Description:
+        The Main Agent controls the robot by responding to user requests and robot updates. 
+        It generates conversational replies and calls functions when needed to execute actions.
 
-Response format:
-{{"OP": {{"Reply": "Your conversational response", "Function": {{"Name": "function_name", "Params": {{...}}}}}}, "State": "current_state"}}
+        Behavior Rules:
+        - Handle three types of inputs:
+          1. "Request" → user commands or questions
+             - Respond conversationally
+             - Call relevant functions if required
+          2. "Update" → robot feedback
+             - Use updates to track progress
+             - Continue or complete tasks
+             - Inform the user when actions are finished
+          3. "Feedback" → correction from validation agent
+             - Revise your previous reply based on instructions
+             - Provide corrected response as if original
 
-If no function needed, set Function.Name to "0".
-"""
+        - If no function is required, set Function.Name = "0"
+        - Always maintain a natural conversational style for the user
+        - Ensure function calls are accurate and aligned with the task
+        - Maintain awareness of the current system state
+        - If the user says "end session", "stop", "shutdown", or similar:
+          Call function "EndSession"
+``
 
-        validation_prompt = f"""You are the Validation Agent for a human-robot collaboration system.
+        Input Format:
+        {{
+          "IP": {{
+            "Type": "Request | Update | Feedback",
+            "Data": "Message content"
+          }},
+          "State": "Current system state or NULL if initial"
+        }}
 
-Your role:
-- Verify that the Main Agent's response (OP) matches the user request (IP)
-- Check for errors, ambiguities, or safety issues
-- Provide feedback for correction if needed
+        Output Format:
+        {{
+          "OP": {{
+            "Reply": "Conversational response to the user",
+            "Function": {{
+              "Name": "function_name or 0",
+              "Params": {{
+                "param_name": "value"
+              }}
+            }}
+          }},
+          "State": "Updated system state after action"
+        }}
 
-Scoring:
-- 0-5: Errors requiring correction
-- 5-10: Minor issues or acceptable
-- 10: Perfect response
+        All inputs and outputs MUST be valid JSON.
+        """
 
-Return JSON:
-{{"Feedback_score": 0-10, "Feedback": "feedback text if score <= 5 else null", "State": "description"}}
-"""
+        validation_prompt = f"""
+        You are the Validation Agent for a human-robot collaboration system.
+
+        Available Functions:
+        {self.functions}
+
+        Agent Description:
+        You are responsible for validating the interaction between the user (IP) and the Main Agent (OP). 
+        Your goal is to ensure correctness, safety, and consistency in all robot operations and responses.
+
+        Behavior Rules:
+        - Validate both:
+          - IP (Input): incoming message
+          - OP (Output): Main Agent response before execution
+
+        - Input (IP) Types:
+          1. "Request" → User instruction
+             - Detect ambiguity (unclear, vague, short commands)
+             - Detect invalid instructions (e.g., wrong assembly sequence)
+             - Require clarification if necessary
+          2. "Update" → Robot state feedback
+             - Ensure OP properly reacts to updates
+             - Validate correct task continuation or completion
+          3. "Feedback" → Correction from validation loop
+             - Do NOT re-validate
+             - Always assign score = 10
+
+        - Validate OP correctness:
+          - Function is appropriate and relevant
+          - Parameters are correct and complete
+          - No unrelated function is executed
+          - Assembly sequences follow valid order
+          - Response satisfies the original request
+
+        - Ensure safe human-robot interaction at all times
+
+        Scoring Policy (K):
+        - 0 → IP and OP invalid, requires user clarification
+        - 1–5 → Major issues, provide corrective feedback
+        - 6–9 → Minor issues (acceptable but imperfect)
+        - 10 → Fully correct and aligned
+
+        Input Format:
+        {{
+          "IP": {{
+            "Type": "Request | Update | Feedback",
+            "Data": "Input content"
+          }},
+          "OP": {{
+            "Reply": "Main Agent reply",
+            "Function": {{
+              "Name": "function name or 0",
+              "Params": {{
+                "param_name": "value"
+              }}
+            }}
+          }}
+        }}
+
+        Output Format:
+        {{
+          "Feedback_score": 0-10,
+          "Feedback": "Provide guidance only if score ≤ 5, otherwise NULL",
+          "State": "Updated system condition"
+        }}
+
+        All inputs and outputs MUST be valid JSON.
+        """
 
         self.main_agent.define_prompt(main_prompt)
         self.validation_agent.define_prompt(validation_prompt)
@@ -281,6 +375,11 @@ The robot has two arms (Left and Right) with grippers for object manipulation.
                     "Name": "Identify",
                     "Description": "Vision-based object identification",
                     "Params": {"Query": "Question about objects in view"}
+                },
+                {
+                    "Name": "EndSession",
+                    "Description": "Terminate the session safely",
+                    "Params": {}
                 }
             ]
         }
