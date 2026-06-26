@@ -3,6 +3,7 @@
 ![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Paper: IEEE Access](https://img.shields.io/badge/Paper-IEEE%20Access-blue.svg)
+[![Project Website](https://img.shields.io/badge/Project-Website-brightgreen.svg)](https://nadunrana.github.io/papers/cognivera/)
 
 **A dual-agent LLM framework for conversational human-robot collaboration with cognitive validation against context-induced hallucinations.**
 
